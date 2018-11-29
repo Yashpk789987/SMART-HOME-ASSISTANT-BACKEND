@@ -1,0 +1,24 @@
+<html>
+    <form >
+        <input id = 'btn1' type = 'submit' value="ONN">
+        <input id = 'btn2' type = 'submit' value="OFF">
+        <br/>
+        <br/>
+        <p id = 'msg'></p>
+    </form>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script>
+         $('#btn1').click((event) => {
+             event.preventDefault();
+             $.get('/firebase/switch' , {action : 1} , (data) => {
+                 $('#msg').html("LED IS ONN.....")
+             })
+         })
+         $('#btn2').click(() => {
+            event.preventDefault();
+             $.get('/firebase/switch' , {action : 0} , (data) => {
+                 $('#msg').html("LED IS OFF.....")
+             })
+         })
+    </script>
+</html>

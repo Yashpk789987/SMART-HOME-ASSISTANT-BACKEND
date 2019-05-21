@@ -18,7 +18,6 @@ client.on('message', async (message, topic) => {
     var device_ids = [];
     var big_object = {};
     var publish_response = '';
-    console.log('Publishing Initial State Of Devices');
     let devicesRef = await rootRef.child('devices');
     await devicesRef.once('value', snapshots => {
       snapshots.forEach(item => {
@@ -34,7 +33,6 @@ client.on('message', async (message, topic) => {
       0,
       publish_response.length - 1
     );
-    console.log(publish_response);
     client.publish('nodemcu/yash', publish_response);
   }
 });

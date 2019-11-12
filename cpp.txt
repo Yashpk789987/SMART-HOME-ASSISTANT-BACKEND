@@ -1,0 +1,143 @@
+#include <ESP8266WiFi.h>
+#include <MQTTClient.h>
+#define LIGHT D0
+#define AC D1
+const char* ssid     = "REACTNATIVE"; 
+const char* password = "Reactnative@2018";
+ 
+WiFiClient WiFiclient;
+MQTTClient client;
+ 
+unsigned long lastMillis = 0;
+ 
+void setup() {
+ pinMode(LIGHT, OUTPUT); 
+ pinMode(AC, OUTPUT); 
+ Serial.begin(115200);
+ delay(10);
+ Serial.println();
+ Serial.println();
+ Serial.print("Connecting to ");
+ Serial.println(ssid);
+ 
+ WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+   delay(500);
+   Serial.print(".");
+ }
+ 
+ Serial.println("");
+ Serial.println("WiFi connected");  
+ Serial.println("IP address: ");
+ Serial.println(WiFi.localIP());
+ 
+ delay(2000);
+ 
+ Serial.print("connecting to MQTT broker...");
+ client.begin("broker.shiftr.io", WiFiclient);
+ client.onMessage(messageReceived);
+ connect();
+}
+ 
+void connect() {
+ while (!client.connect("nodemcu", "try", "try")) {
+   Serial.print(".");
+ }
+ 
+ Serial.println("\nconnected!");
+ client.subscribe("nodemcu/yash");
+ client.publish("nodemcu/yash", "initial_request");
+}
+
+void messageReceived(String &topic, String &payload) {
+  if(payload.indexOf(':') != -1){
+    Serial.println(payload);
+    String device_id , state , temp_string, temp_string_2 ;
+    int code = 0 , pointer = 0;
+    do {   temp_string_2 = payload;
+           temp_string = payload.indexOf(":") == -1 ? payload : (payload.substring(pointer,payload.indexOf(":"))) ;
+           Serial.println(temp_string);
+           device_id = temp_string.substring(0,temp_string.length()-2);
+           state = temp_string.substring(temp_string.length()-1);
+           if(device_id.equals("-LbF2p4d6pKZmlRcSW79")){
+               code = 100;  
+           } else if(device_id.equals("-LbF362h7tn95YmY1BNZ")){
+               code = 200;  
+           }
+          switch(code){
+              case 100:
+                 Serial.println(code);
+                 if(state.toInt() == 1){
+                     digitalWrite(LIGHT,0);
+                 } else if(state.toInt() == 0){
+                     digitalWrite(LIGHT, 1);  
+                 }
+                 
+                 break;
+              case 200:
+                 Serial.println(code);
+                 if(state.toInt() == 1){
+                     digitalWrite(AC,0);
+                 } else if(state.toInt() == 0){
+                     digitalWrite(AC, 1);  
+                 }
+                 break;
+              default :
+                 break;   
+          }
+           payload.remove(pointer, (temp_string.length() + 1));
+           pointer += (temp_string.length() + 1);
+    }while(temp_string_2.indexOf(":") != -1);
+    
+    
+    }
+  else{
+    String device_id , state ;
+    int code = 0;
+    device_id = payload.substring(0,payload.length()-2);
+    state = payload.substring(payload.length()-1);
+    if(device_id.equals("-LbF2p4d6pKZmlRcSW79")){
+       code = 100;  
+    } else if(device_id.equals("-LbF362h7tn95YmY1BNZ")){
+       code = 200;  
+    }
+    Serial.println("incoming: " + topic + " - " + payload);
+    Serial.println(device_id);
+    Serial.println(state);
+    switch(code){
+        case 100:
+           if(state.toInt() == 1){
+               digitalWrite(LIGHT,0);
+           } else if(state.toInt() == 0){
+               digitalWrite(LIGHT, 1);  
+           }
+           
+           break;
+        case 200:
+           if(state.toInt() == 1){
+               digitalWrite(AC,0);
+           } else if(state.toInt() == 0){
+               digitalWrite(AC, 1);  
+           }
+           break;
+        default :
+           break;   
+    }
+  }
+  
+}
+ 
+void loop() {
+ client.loop();
+ 
+ if(!client.connected()) {
+   connect();
+ }
+}
+
+
+
+/////////////////////// DEVICE FIREBASE-ID DEFINITION //////////////////////
+
+/////// DINNING ROOM LIGHT -> ID -> -LbF2p4d6pKZmlRcSW79  -> codeWord -> 100
+/////// BED ROOM A.C. -> ID -> -LbF362h7tn95YmY1BNZ  -> codeWord -> 200
